@@ -42,8 +42,8 @@ Two lists are critical to camera calibration: the `objpoints` and `imgpoints`.
 
 An example of original image and the results after finding and drawing chessboard corners is shown below.
 
-![Original Distorted Image][image1 = 250x]
-![Original Distorted Image with Corners Found][image2 = 250x]
+![Original Distorted Image][image1]
+![Original Distorted Image with Corners Found][image2]
 
 Then, the function `cv2.calibrateCamera()` is implemented to find the **camera matrix** and **distortion coefficient**. They are further applied to test image using the `cv2.undistort()` function and obtained this result: 
 
