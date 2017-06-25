@@ -18,6 +18,8 @@ The goals / steps of this project are the following:
 [image3]: ./output_images/results_undistortion.jpg "Comparison before and after Undistortion"
 [image4]: ./output_images/results_binaries.jpg "Effect of Gradient, Color Channel Operations"
 [image5]: ./output_images/results_video_demo.jpg "Demo Output"
+[image6]: ./output_images/results_warped.jpg "Warped Image"
+[image7]: ./output_images/results_fitted.jpg "Fitting Results"
 [video1]: ./output_images/test_output.mp4 "Video Output"
 
 ---
@@ -30,82 +32,87 @@ You're reading it!
 
 ### Camera Calibration
 
-#### 1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
+#### 1. Briefly state how you computed the camera matrix and distortion coefficients. 
 
-The code for this step is contained in the first code cell of the IPython notebook located in "./examples/example.ipynb" (or in lines # through # of the file called `some_file.py`).  
+The code for this step is contained in the first and second code cell of the IPython notebook located [here](https://github.com/cedricxie/CarND-Advanced-Lane-Lines/blob/master/advanced_lane_lines_YX.ipynb).  
 
-I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.  
+Two lists are critical to camera calibration: the `objpoints` and 'imgpoints'.
+1. 'objpoints' are a list of the (x, y, z) coordinates of the chessboard corners in the real world. It is assumed that chessboard is fixed on the (x, y) plane at z=0
+2. `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.  
 
-I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result: 
+An example of original image and the results after finding and drawing chessboard corners is shown below.
 
-![alt text][image1]
+![Original Distorted Image][image1]
+![Original Distorted Image with Corners Found][image2]
+
+Then, the function `cv2.calibrateCamera()' is implemented to find the **camera matrix** and **distortion coefficient**. They are further applied to test image using the `cv2.undistort()` function and obtained this result: 
+
+![Comparison before and after Undistortion][image3]
 
 ### Pipeline (single images)
 
 #### 1. Provide an example of a distortion-corrected image.
 
-To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
-![alt text][image2]
+An example of applying distortion correction to one of the test images is shown in the section above.
 
-#### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
+#### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.
 
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+I used a combination of color and gradient thresholds to generate a binary image (detailed codes are in the third cell of the [notebook](https://github.com/cedricxie/CarND-Advanced-Lane-Lines/blob/master/advanced_lane_lines_YX.ipynb)). Here's an example of my output for this step.
 
-![alt text][image3]
+![Effect of Gradient, Color Channel Operations][image4]
 
-#### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
+As demonstrated, the filters I applied include:
+1. Gradient in the X direction with `cv2.Sobel` function
+2. Magnitude of the Gradient in X and Y direction
+3. Directional Gradient
+4. Combined Gradient of 1-3 above
+5. Saturation Channel of image in HLS format
+6. Saturation Channel combined with Gradient in the X Direction
 
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+#### 3. Describe how (and identify where in your code) you performed a perspective transform.
 
-```python
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
-```
+A function `perspective_transform` is created in the third cell of the [notebook](https://github.com/cedricxie/CarND-Advanced-Lane-Lines/blob/master/advanced_lane_lines_YX.ipynb). This function is capable of both warping and unwarping an image, depending on the value of the parameter `flag`.
 
-This resulted in the following source and destination points:
+1. When warping an image (`flag` set to be `1`), the first is first undistorted with `cv2.undistort`, then the perspective transform `M` is calculated using `cv2.getPerspectiveTransform` with source points `src` and destination points `dst`. In the end, the warped image is obtained using function `cv2.warpPerspective`. The source and destination points are listed as follows.
 
 | Source        | Destination   | 
 |:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
+| 260, 680      | 300, 700      | 
+| 1050, 680     | 900, 700      |
+| 590, 450      | 300, 50       |
+| 680, 450      | 900, 50       |
 
 I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
 
-![alt text][image4]
+![Warped Image][image6]
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+In the fourth cell of [notebook](https://github.com/cedricxie/CarND-Advanced-Lane-Lines/blob/master/advanced_lane_lines_YX.ipynb), I applied the sliding window method together a convolution on my warped image to find the best window center positions. In the following image, the red and blue boxes show the centers found on the left and right lanes perspectively. Then I fit my lane lines with a 2nd order polynomial as the yellow lines.
 
-![alt text][image5]
+![Searching and Fitting Results][image7]
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I did this in lines # through # in my code in `my_other_file.py`
+Similarly fourth cell of [notebook](https://github.com/cedricxie/CarND-Advanced-Lane-Lines/blob/master/advanced_lane_lines_YX.ipynb), for a function as $$f(y) = Ay^2 + By +C$$, the curvature is calculated as follows.
+
+
+$$R_curvature = \frac{{{{\left( {1 + {{(2Ay + B)}^2}} \right)}^{3/2}}}}{{\left| {2A} \right|}}$$
+
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+All the used functions and supporting codes are put into the fifth cell of the [notebook](https://github.com/cedricxie/CarND-Advanced-Lane-Lines/blob/master/advanced_lane_lines_YX.ipynb). Here is an example of my result on a test image:
 
-![alt text][image6]
+![Demo Output][image5]
 
 ---
 
 ### Pipeline (video)
 
-#### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
+#### 1. Provide a link to your final video output.
 
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result](./test_output.mp4)
 
 ---
 
@@ -113,4 +120,5 @@ Here's a [link to my video result](./project_video.mp4)
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+The major problem I faced in the project is combining all the available codes together. And due to the time issue, I haven't set up the more sophisticated code structure as suggested.
+The code might fail when the curvature is really sharp, and could potentially be solved by increasing the resolution of the windows search.
